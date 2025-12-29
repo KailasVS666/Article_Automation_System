@@ -14,5 +14,14 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// This is the URL the scraper will use to send data
+/**
+ * Phase 1: Store articles in the database [cite: 11]
+ * Method: POST
+ */
 Route::post('/articles', [ArticleController::class, 'store']);
+
+/**
+ * Phase 2: Fetch articles for research and rewriting [cite: 15]
+ * Method: GET
+ */
+Route::get('/articles', [ArticleController::class, 'index']);
