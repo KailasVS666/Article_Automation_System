@@ -1,0 +1,9 @@
+# Ignore Node.js dependencies
+node_modules/
+automation/node_modules/
+
+# Ignore Laravel environment files and system files
+.env
+backend/.env
+storage/*.key
+vendor/
