@@ -11,7 +11,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^1.34.0",
+    "@mozilla/readability": "^0.6.0",
     "axios": "^1.13.2",
-    "puppeteer": "^24.34.0"
+    "dotenv": "^17.2.3",
+    "jsdom": "^27.4.0",
+    "puppeteer": "^24.34.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

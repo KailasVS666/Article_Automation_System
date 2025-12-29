@@ -8,16 +8,18 @@ use Illuminate\Http\Request;
 class ArticleController extends Controller
 {
     /**
-     * Phase 2: Fetch articles from the database 
+     * Phase 2: Fetch only the 5 oldest articles for research
      */
     public function index()
     {
-        // Returns all articles (including the 5 oldest you just scraped) [cite: 12, 15]
-        return response()->json(Article::all());
+        // Order by ID ascending (oldest first) and take only 5
+        $articles = Article::orderBy('id', 'asc')->take(5)->get();
+        
+        return response()->json($articles);
     }
 
     /**
-     * Phase 1: Store scraped articles in MySQL [cite: 11, 12]
+     * Phase 1: Store scraped articles in MySQL
      */
     public function store(Request $request)
     {
@@ -28,7 +30,7 @@ class ArticleController extends Controller
             'url'     => 'required|url|unique:articles,url',
         ]);
 
-        // Create the record in MySQL [cite: 11]
+        // Create the record in MySQL
         $article = Article::create($validated);
 
         return response()->json([

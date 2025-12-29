@@ -1,0 +1,21 @@
+# Node dependencies and build output
+node_modules/
+automation_profile/
+
+# Puppeteer artifacts
+.puppeteer*
+*.har
+*.mp4
+*.webm
+
+# Environment and local overrides
+.env
+.env.local
+
+# Logs and debug artifacts
+npm-debug.log*
+yarn-error.log*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
