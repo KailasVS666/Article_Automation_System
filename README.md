@@ -1,85 +1,88 @@
-# Article Automation System (BeyondChats Intern Assignment)
+# 🚀 Article Automation System: Content Transformation Engine
 
-A complete full-stack automation pipeline that scrapes original blog posts, conducts competitive research via Google, and synthesizes enhanced articles using Gemini AI.
+Analyzing the impact of Gemini-driven research on BeyondChats blog archives.
+
+## 📖 Project Overview
+
+This project is an automated end-to-end pipeline designed to scrape historical articles, conduct deep competitor research via Google, and utilize LLMs to synthesize enhanced versions.
+
+### Architecture & Data Flow Diagram
+
+> This diagram illustrates the flow from initial scraping to AI synthesis and final UI display.
+
+```mermaid
+graph TD
+	A[BeyondChats Blog] -->|Phase 1: Puppeteer Scrape| B(Laravel API / MySQL)
+	B -->|Phase 2: REST Fetch| C{Smart-Sync Researcher}
+	C -->|Google Search| D[Competitor Articles]
+	D -->|Web Scraping| E[Context Extraction]
+	E -->|Context + Original| F[Gemini 2.5 Flash LLM]
+	F -->|Enhanced Content| B
+	B -->|Phase 3: API Delivery| G[React Dashboard]
+	G -->|View Side-by-Side| H[User Comparison Modal]
+
+```
 
 ---
 
-## 📊 Project Architecture
+## 🛠️ Local Setup Instructions
 
-1. **Automation (Node.js)**: Utilizes `Puppeteer Stealth` to research competitors and `Gemini 1.5 Flash` AI to synthesize professional content with citations.
-2. **Backend (Laravel 11)**: A robust RESTful API that handles storage and retrieval of articles in MySQL.
-3. **Frontend (React.js)**: A modern, responsive dashboard to compare original and AI-synthesized versions side-by-side.
+> Follow these steps to replicate the environment for evaluation.
 
----
+### 1. Prerequisites
 
-## 🛠️ Local Setup & Installation
+- **PHP 8.2+** & **Composer** (Backend)
+- **Node.js (LTS)** (Automation & Frontend)
+- **MySQL** (Database)
+- **Google Gemini API Key** (Phase 2 Synthesis)
 
-### 1. Database (MySQL)
-
-- Start **MySQL** via XAMPP/WAMP.
-- **Note**: This project is configured for **Port 3307**.
-- Create a database named `article_automation`.
-
-### 2. Backend (Laravel)
+### 2. Backend Setup (Laravel)
 
 ```bash
 cd backend
-# Update .env with DB_PORT=3307 and your credentials
-php artisan config:publish cors
+composer install
+cp .env.example .env # Ensure DB_DATABASE=beyondchats_db
+php artisan migrate
 php artisan serve
+
 ```
 
-### 3. Automation Engine (Node.js)
+### 3. Automation Setup (Node.js)
 
 ```bash
 cd automation
-# Ensure your GEMINI_API_KEY is in the .env file
-node researcher.js
+npm install
+# Update .env with your GEMINI_API_KEY
+node scraper.js    # Phase 1: Scrapes 5 oldest articles
+node researcher.js  # Phase 2: AI Research & Synthesis
+
 ```
 
-### 4. Frontend (React)
+### 4. Frontend Setup (React)
 
 ```bash
 cd frontend
 npm install
-npm start
-# Open http://localhost:3000 in your browser
+npm start # Launches at http://localhost:3000
+
 ```
 
 ---
 
-## 🎨 Frontend Features
+## ⚡ Engineering Highlights
 
-### Dashboard Overview
-
-- **Article Grid View**: Displays all scraped articles in a responsive card layout
-- **Side-by-Side Comparison**: Click any article card to view original vs AI-enhanced versions
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
-- **Dark Theme**: Professional dark mode UI optimized for readability
-
-### Key Components
-
-1. **ArticleList**: Grid layout showing all article pairs with preview snippets
-2. **ComparisonOverlay**: Split-screen modal for detailed side-by-side comparison
-3. **Error Handling**: Graceful error messages if backend is unavailable
-4. **Empty States**: Clear messaging when no articles are found
+- **Idempotent Smart-Sync:** The researcher identifies original articles missing their updated pairs, preventing duplicate API costs.
+- **Persistent Browser Profiles:** Utilizes a fixed `userDataDir` to reuse browser sessions, increasing stability and preventing workspace junk.
+- **Resilient Research Engine:** Implemented 60-second timeouts and `domcontentloaded` strategies to handle slow competitor sites.
+- **Professional UI/UX:** Dark-themed dashboard with comparison modals to verify content transformation.
 
 ---
 
-## 🚀 Running the Complete System
+## 🔗 Live Links
 
-1. **Start MySQL** (Port 3307)
-2. **Start Backend**: `cd backend && php artisan serve` (Port 8000)
-3. **Start Frontend**: `cd frontend && npm start` (Port 3000)
-4. **Run Automation** (when needed): `cd automation && node researcher.js`
-
-The frontend will automatically fetch articles from `http://127.0.0.1:8000/api/articles` and display them in the dashboard at `http://localhost:3000`.
+- **GitHub Repository:** https://github.com/KailasVS666/Article_Automation_System.git
+- **Live Dashboard:** Your Live Link Here
 
 ---
 
-## ✨ Key Features
 
-- **Stealth Scraping**: Bypasses bot detection to gather competitor data.
-- **AI Synthesis**: Generates structured Markdown content with headers and lists.
-- **Automated Citations**: Includes links to original competitor sources.
-- **Live Comparison**: Professional UI styling to distinguish original vs. enhanced articles.
