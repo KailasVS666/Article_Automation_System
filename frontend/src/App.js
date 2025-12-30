@@ -12,7 +12,7 @@ function App() {
 
   useEffect(() => {
     // Fetch all articles from your Laravel API
-    axios.get('http://127.0.0.1:8000/api/articles')
+    axios.get(`${process.env.REACT_APP_API_URL}/api/articles`)
       .then(res => {
         const all = res.data;
         // Logic to pair Original with its [Updated] version
@@ -26,7 +26,7 @@ function App() {
       })
       .catch(err => {
         console.error("API Connection Failed", err);
-        setError(err.message || "Failed to connect to the API. Make sure Laravel backend is running on http://127.0.0.1:8000");
+        setError(err.message || "Failed to connect to the API. Make sure Laravel backend is running.");
         setLoading(false);
       });
   }, []);
