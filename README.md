@@ -27,7 +27,32 @@ A complete full-stack automation pipeline that scrapes original blog posts, cond
 
 ### 4. Frontend (React)
 - Navigate to `/frontend`.
-- Run `npm install` and then `npm start`.
+- Run `npm install` (if not already done).
+- Run `npm start` to launch the React development server.
+- Open `http://localhost:3000` in your browser to view the dashboard.
+
+## 🎨 Frontend Features
+
+### Dashboard Overview
+- **Article Grid View**: Displays all scraped articles in a responsive card layout
+- **Side-by-Side Comparison**: Click any article card to view original vs AI-enhanced versions
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+- **Dark Theme**: Professional dark mode UI optimized for readability
+
+### Key Components
+1. **ArticleList**: Grid layout showing all article pairs with preview snippets
+2. **ComparisonOverlay**: Split-screen modal for detailed side-by-side comparison
+3. **Error Handling**: Graceful error messages if backend is unavailable
+4. **Empty States**: Clear messaging when no articles are found
+
+## 🚀 Running the Complete System
+
+1. **Start MySQL** (Port 3307)
+2. **Start Backend**: `cd backend && php artisan serve` (Port 8000)
+3. **Start Frontend**: `cd frontend && npm start` (Port 3000)
+4. **Run Automation** (when needed): `cd automation && node researcher.js`
+
+The frontend will automatically fetch articles from `http://127.0.0.1:8000/api/articles` and display them in the dashboard.
 - View the dashboard at `http://localhost:3000`.
 
 ## ✨ Key Features

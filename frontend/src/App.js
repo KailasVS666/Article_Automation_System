@@ -1,65 +1,77 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import ReactMarkdown from 'react-markdown';
+import ArticleList from './components/ArticleList';
+import ComparisonOverlay from './components/ComparisonOverlay';
 import './App.css';
 
 function App() {
-  const [articles, setArticles] = useState([]);
+  const [pairs, setPairs] = useState([]);
+  const [selectedPair, setSelectedPair] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Connect to your local Laravel CRUD API [cite: 24]
-    const fetchArticles = async () => {
-      try {
-        const response = await axios.get('http://127.0.0.1:8000/api/articles');
-        setArticles(response.data);
-      } catch (error) {
-        console.error("API Connection Error:", error);
-      } finally {
+    // Fetch all articles from your Laravel API
+    axios.get('http://127.0.0.1:8000/api/articles')
+      .then(res => {
+        const all = res.data;
+        // Logic to pair Original with its [Updated] version
+        const originalArticles = all.filter(a => !a.title.includes('[Updated]'));
+        const paired = originalArticles.map(org => ({
+          original: org,
+          enhanced: all.find(a => a.title === `[Updated] ${org.title}`)
+        }));
+        setPairs(paired);
         setLoading(false);
-      }
-    };
-    fetchArticles();
+      })
+      .catch(err => {
+        console.error("API Connection Failed", err);
+        setError(err.message || "Failed to connect to the API. Make sure Laravel backend is running on http://127.0.0.1:8000");
+        setLoading(false);
+      });
   }, []);
 
-  if (loading) return <div className="loader">✨ Initializing Phase 3 Dashboard...</div>;
+  if (loading) return <div className="full-loader">Initializing AI Dashboard...</div>;
+  
+  if (error) return (
+    <div className="error-container">
+      <div className="error-message">
+        <h2>⚠️ Connection Error</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()} className="retry-btn">Retry Connection</button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="app-container">
-      <header className="main-header">
-        <div className="badge-main">BEYONDCHATS ASSIGNMENT</div>
-        <h1>Article Automation System</h1>
-        <p>Comparison View: Original Scrapes vs. AI-Enhanced Articles </p>
-      </header>
+    <div className="modern-dashboard">
+      <nav className="top-nav">
+        <div className="logo">Article<span>Automation</span></div>
+        <div className="status-pill">System Online</div>
+      </nav>
 
-      <main className="grid">
-        {articles.map((article) => (
-          <article 
-            key={article.id} 
-            className={article.title.includes('[Updated]') ? 'card enhanced' : 'card original'}
-          >
-            <header className="card-header">
-              <span className="type-label">
-                {article.title.includes('[Updated]') ? '✨ AI ENHANCED' : '📝 ORIGINAL'}
-              </span>
-              <span className="id-tag">ID: {article.id}</span>
-            </header>
-            
-            <h2 className="article-title">{article.title.replace('[Updated] ', '')}</h2>
-            
-            <div className="article-body">
-              {/* ReactMarkdown renders headers and lists from the AI synthesis [cite: 20] */}
-              <ReactMarkdown>{article.content}</ReactMarkdown>
-            </div>
+      <main className="content-wrapper">
+        <header className="hero-header">
+          <h1>Content Transformation <span>Engine</span></h1>
+          <p>Analyzing the impact of Gemini-driven research on BeyondChats blog archives.</p>
+        </header>
 
-            <footer className="card-footer">
-              <a href={article.url} target="_blank" rel="noreferrer" className="source-link">
-                View Source URL ↗
-              </a>
-            </footer>
-          </article>
-        ))}
+        {pairs.length === 0 ? (
+          <div className="empty-state">
+            <h3>No Articles Found</h3>
+            <p>Run the scraper to fetch articles from BeyondChats blog.</p>
+          </div>
+        ) : (
+          <ArticleList pairs={pairs} onSelect={setSelectedPair} />
+        )}
       </main>
+
+      {selectedPair && (
+        <ComparisonOverlay 
+          pair={selectedPair} 
+          onClose={() => setSelectedPair(null)} 
+        />
+      )}
     </div>
   );
 }
