@@ -20,7 +20,10 @@ return [
     'allowed_methods' => ['*'],
 
     // Specifically allow your React frontend URL
-    'allowed_origins' => ['http://localhost:3000'],
+    'allowed_origins' => [
+        'http://localhost:3000',
+        'https://article-automation-system-one.vercel.app'
+    ],
 
     'allowed_origins_patterns' => [],
 
