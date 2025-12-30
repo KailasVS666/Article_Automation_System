@@ -13,9 +13,7 @@ class ArticleController extends Controller
     public function index()
     {
         // Order by ID ascending (oldest first) and take only 5
-        $articles = Article::orderBy('id', 'asc')->take(5)->get();
-        
-        return response()->json($articles);
+        return Article::all();
     }
 
     /**

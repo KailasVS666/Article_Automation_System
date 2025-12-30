@@ -1,0 +1,25 @@
+.app-container { padding: 40px; background-color: #f8fafc; min-height: 100vh; font-family: 'Inter', system-ui, sans-serif; }
+.main-header { text-align: center; margin-bottom: 50px; }
+.badge-main { display: inline-block; padding: 4px 12px; background: #334155; color: white; border-radius: 20px; font-size: 11px; margin-bottom: 10px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 30px; max-width: 1400px; margin: 0 auto; }
+
+.card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; transition: all 0.3s ease; display: flex; flex-direction: column; overflow: hidden; }
+.card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+
+.card-header { padding: 15px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+.type-label { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; }
+.id-tag { color: #94a3b8; font-size: 12px; }
+
+.enhanced { border-top: 6px solid #00d1b2; }
+.enhanced .type-label { color: #00d1b2; }
+
+.original { border-top: 6px solid #64748b; }
+.original .type-label { color: #64748b; }
+
+.article-title { padding: 20px 20px 10px; margin: 0; font-size: 1.1rem; color: #1e293b; }
+.article-body { padding: 0 20px 20px; height: 300px; overflow-y: auto; font-size: 14px; line-height: 1.6; color: #475569; }
+
+.card-footer { padding: 12px 20px; background: #f8fafc; margin-top: auto; }
+.source-link { text-decoration: none; color: #64748b; font-size: 12px; font-weight: 600; }
+.loader { height: 100vh; display: flex; justify-content: center; align-items: center; color: #00d1b2; font-weight: bold; }
