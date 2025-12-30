@@ -1,60 +1,67 @@
-const puppeteer = require('puppeteer');
+require('dotenv').config();
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const axios = require('axios');
 
+puppeteer.use(StealthPlugin());
+
 (async () => {
-    console.log("🚀 Starting Phase 1: Fetching the 5 Oldest Articles...");
+    console.log("🚀 Starting Phase 1: Capturing the 5 ABSOLUTE oldest articles...");
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
-    
+
     try {
-        // 1. Find the maximum page number first [cite: 10]
+        // 1. Find the true last page
         await page.goto('https://beyondchats.com/blogs/', { waitUntil: 'networkidle2' });
-        const lastPageNumber = await page.evaluate(() => {
-            const numbers = Array.from(document.querySelectorAll('.page-numbers'))
-                .map(el => parseInt(el.innerText))
-                .filter(n => !isNaN(n));
+        const lastPage = await page.evaluate(() => {
+            const pages = Array.from(document.querySelectorAll('.page-numbers'));
+            const numbers = pages.map(p => parseInt(p.innerText)).filter(n => !isNaN(n));
             return Math.max(...numbers);
         });
 
-        let allOldest = [];
-        let currentPage = lastPageNumber;
+        let articleLinks = [];
+        let currentPage = lastPage;
 
-        // 2. Loop backwards until we have at least 5 articles 
-        while (allOldest.length < 5 && currentPage > 0) {
-            console.log(`📑 Navigating to page ${currentPage} to collect archive...`);
+        // 2. Gather links from the end moving backwards
+        while (articleLinks.length < 5 && currentPage > 0) {
             await page.goto(`https://beyondchats.com/blogs/page/${currentPage}/`, { waitUntil: 'networkidle2' });
-
+            
             const pageArticles = await page.evaluate(() => {
-                // Reverse the articles on the page so the absolute oldest are first 
-                return Array.from(document.querySelectorAll('article')).reverse().map(item => ({
-                    title: item.querySelector('h2')?.innerText.trim(),
-                    content: item.querySelector('.entry-content, p')?.innerText.trim(),
+                const items = Array.from(document.querySelectorAll('article, .elementor-post'));
+                return items.map(item => ({
+                    title: item.querySelector('h1, h2, h3, .elementor-post__title')?.innerText.trim(),
                     url: item.querySelector('a')?.href
-                }));
+                })).filter(a => a.title && a.url);
             });
 
-            allOldest = [...allOldest, ...pageArticles];
+            // We reverse because the oldest on the page are at the bottom
+            articleLinks = [...articleLinks, ...pageArticles.reverse()];
             currentPage--;
         }
 
-        // 3. Keep only the first 5 (the absolute oldest) 
-        const finalFive = allOldest.slice(0, 5);
-        console.log(`📦 Successfully extracted ${finalFive.length} oldest articles.`);
+        // 3. Take exactly the first 5 we found (the 5 absolute oldest)
+        const theOldestFive = articleLinks.slice(0, 5);
 
-        // 4. Store in Database via Laravel API [cite: 11, 12]
-        for (const article of finalFive) {
-            try {
-                const res = await axios.post('http://127.0.0.1:8000/api/articles', article);
-                console.log(`✔ Saved to DB: ${res.data.data.title}`);
-            } catch (err) {
-                console.log(`ℹ Skipped (Duplicate): ${article.title}`);
-            }
+        for (const article of theOldestFive) {
+            console.log(`📡 Extracting Full Content: ${article.title}`);
+            await page.goto(article.url, { waitUntil: 'networkidle2' });
+
+            const bodyContent = await page.evaluate(() => {
+                const container = document.querySelector('.elementor-widget-theme-post-content, .entry-content');
+                return container ? container.innerText.trim() : "Content not found.";
+            });
+
+            await axios.post('http://127.0.0.1:8000/api/articles', {
+                title: article.title,
+                content: bodyContent,
+                url: article.url
+            });
         }
 
-    } catch (error) {
-        console.error("❌ Critical Error:", error.message);
+    } catch (err) {
+        console.error("❌ Error:", err.message);
     } finally {
         await browser.close();
-        console.log("🏁 Phase 1 Requirement Fully Met.");
+        console.log("\n🏁 Phase 1 Complete: Absolute 5 oldest stored.");
     }
 })();

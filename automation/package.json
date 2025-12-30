@@ -11,7 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@google/genai": "^1.34.0",
+    "@google/generative-ai": "^0.24.1",
     "@mozilla/readability": "^0.6.0",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",

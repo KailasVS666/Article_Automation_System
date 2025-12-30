@@ -4,20 +4,16 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const axios = require('axios');
 const { JSDOM, VirtualConsole } = require('jsdom');
 const { Readability } = require('@mozilla/readability');
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 puppeteer.use(StealthPlugin());
-
-// Silence JSDOM CSS warnings
 const virtualConsole = new VirtualConsole();
 virtualConsole.on("error", () => {}); 
 
-// Initialize the 2025 Unified SDK
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 (async () => {
-    console.log("🚀 Starting Phase 2: Professional Research & AI Rewrite...");
-    
+    console.log("🚀 FINAL ATTEMPT: Reusing profile & filling gaps with 60s timeouts...");
     const browser = await puppeteer.launch({ 
         headless: false,
         userDataDir: './automation_profile', 
@@ -25,106 +21,73 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     });
 
     const page = await browser.newPage();
-    
-    // Set a global 30-second limit for all navigation and wait actions
-    // This prevents the script from getting "stuck" on a single site
-    await page.setDefaultNavigationTimeout(30000);
-    await page.setDefaultTimeout(30000);
+    // Increase global default timeout to 60 seconds
+    await page.setDefaultNavigationTimeout(60000); 
 
     try {
-        const { data: articles } = await axios.get('http://127.0.0.1:8000/api/articles');
-        console.log(`📡 Connected. Processing ${articles.length} articles.`);
+        const { data: allArticles } = await axios.get('http://127.0.0.1:8000/api/articles');
+        const updatedTitles = allArticles
+            .filter(a => a.title.startsWith('[Updated]'))
+            .map(a => a.title.replace('[Updated] ', ''));
 
-        for (const article of articles) {
+        const pendingArticles = allArticles.filter(a => 
+            !a.title.startsWith('[Updated]') && !updatedTitles.includes(a.title)
+        );
+
+        console.log(`📡 Found ${pendingArticles.length} articles requiring synthesis.`);
+
+        for (const article of pendingArticles) {
             console.log(`\n🔎 Researching: "${article.title}"`);
-
+            
             try {
-                // Navigate to Google
                 await page.goto(`https://www.google.com/search?q=${encodeURIComponent(article.title)}&hl=en`, {
-                    waitUntil: 'networkidle2' // Better for 2025 dynamic pages
+                    waitUntil: 'domcontentloaded' // Faster than networkidle2
                 });
                 
-                // Wait for search results with a more specific selector
-                await page.waitForSelector('h3', { timeout: 15000 });
-                console.log("✅ Results found!");
+                await page.waitForSelector('h3', { timeout: 30000 });
+                const links = await page.evaluate(() => 
+                    Array.from(document.querySelectorAll('a h3'))
+                    .map(h3 => h3.closest('a')?.href)
+                    .filter(href => href && !href.includes('google.com')).slice(0, 2)
+                );
 
-                const competitorLinks = await page.evaluate(() => {
-                    const results = [];
-                    const anchors = Array.from(document.querySelectorAll('a h3')).map(h3 => h3.closest('a')?.href);
-                    // Filter out non-article domains that often block scrapers
-                    const skip = ['google.com', 'beyondchats.com', 'amazon.com', 'pinterest.com', 'facebook.com', 'linkedin.com', 'twitter.com', 'youtube.com'];
-                    
-                    for (const href of anchors) {
-                        if (href && href.startsWith('http') && !skip.some(s => href.includes(s))) {
-                            results.push(href);
-                        }
-                        if (results.length === 2) break;
-                    }
-                    return results;
-                });
-
-                console.log(`✅ Competitors found: ${competitorLinks.length}`);
-
-                let researchContext = "";
-                for (const link of competitorLinks) {
+                let context = "";
+                for (const link of links) {
                     try {
-                        console.log(`📡 Extracting: ${link}...`);
-                        // Set a shorter timeout for individual competitor pages
-                        await page.goto(link, { waitUntil: 'networkidle2', timeout: 20000 });
+                        console.log(`📡 Extracting: ${link}`);
+                        await page.goto(link, { waitUntil: 'domcontentloaded', timeout: 45000 });
                         const html = await page.content();
-                        
                         const doc = new JSDOM(html, { url: link, virtualConsole });
-                        const content = new Readability(doc.window.document).parse();
-                        
-                        if (content && content.textContent) {
-                            researchContext += `\n\n--- SOURCE: ${link} ---\n${content.textContent.substring(0, 3000)}`;
-                        }
-                    } catch (e) { 
-                        console.log(`⚠️ Skip scraping (Slow or Protected): ${link}`); 
-                    }
+                        const parsed = new Readability(doc.window.document).parse();
+                        if (parsed?.textContent) context += `\nSource ${link}: ${parsed.textContent.substring(0, 3000)}`;
+                    } catch (e) { console.log(`⚠️ Skip: ${link} due to slow load.`); }
                 }
 
-                if (researchContext.length > 100) {
-                    console.log("🤖 Gemini is synthesizing research...");
+                if (context.length > 100) {
+                    console.log("🤖 Synthesizing with Gemini 2.5 Flash...");
+                    await new Promise(r => setTimeout(r, 15000)); 
+
+                    const model = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash" });
+                    const prompt = `Rewrite into professional guide: ${article.title}. Original: ${article.content}. Research: ${context}. Use Markdown & Cite: ${links.join(', ')}.`;
                     
-                    const response = await ai.models.generateContent({
-                        model: 'gemini-2.5-flash',
-                        contents: `
-                            TASK: Professional Rewrite
-                            Rewrite the original article using the provided research to match top-ranking depth and formatting.
-                            ORIGINAL CONTENT: ${article.content}
-                            RESEARCH CONTENT: ${researchContext}
-                            REQUIREMENTS: 
-                            1. Use professional Markdown with H1, H2, and H3 headers.
-                            2. Add detailed insights from the research.
-                            3. CITE these links at the very bottom under 'References': ${competitorLinks.join(', ')}.
-                        `
-                    });
-
-                    const rewrittenText = response.text;
-
+                    const result = await model.generateContent(prompt);
+                    
                     await axios.post('http://127.0.0.1:8000/api/articles', {
                         title: `[Updated] ${article.title}`,
-                        content: rewrittenText,
-                        url: `${article.url}?update=${Date.now()}` 
+                        content: result.response.text(),
+                        url: `${article.url}?updated=true`
                     });
-                    console.log("✨ Success: Enhanced version saved to DB.");
-                } else {
-                    console.log("⚠️ Not enough research found to rewrite this article.");
+                    console.log("✨ Success! Saved to DB.");
                 }
-
-            } catch (innerErr) {
-                console.log(`❌ Error processing "${article.title}": ${innerErr.message}`);
-                continue; // Move to the next article instead of stopping the whole script
+            } catch (err) {
+                console.error(`❌ Error processing "${article.title}":`, err.message);
+                console.log("🔄 Continuing to next article...");
             }
-
-            // Anti-detection delay between articles
-            await new Promise(r => setTimeout(r, 5000)); 
+            await new Promise(r => setTimeout(r, 5000));
         }
-    } catch (err) {
-        console.error("❌ Fatal Error:", err.message);
-    } finally {
-        await browser.close();
-        console.log("\n🏁 Phase 2 Complete.");
+    } catch (err) { console.error("❌ Fatal System Error:", err.message); }
+    finally { 
+        await browser.close(); 
+        console.log("\n🏁 Done. Check your DB for 10 rows."); 
     }
 })();
