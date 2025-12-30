@@ -21,11 +21,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     });
 
     const page = await browser.newPage();
-    // Increase global default timeout to 60 seconds
-    await page.setDefaultNavigationTimeout(60000); 
+    await page.setDefaultNavigationTimeout(60000);
 
     try {
-        const { data: allArticles } = await axios.get('http://127.0.0.1:8000/api/articles');
+        const { data: allArticles } = await axios.get(`${process.env.BACKEND_API_URL}/articles`);
         const updatedTitles = allArticles
             .filter(a => a.title.startsWith('[Updated]'))
             .map(a => a.title.replace('[Updated] ', ''));
@@ -41,7 +40,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
             
             try {
                 await page.goto(`https://www.google.com/search?q=${encodeURIComponent(article.title)}&hl=en`, {
-                    waitUntil: 'domcontentloaded' // Faster than networkidle2
+                    waitUntil: 'domcontentloaded'
                 });
                 
                 await page.waitForSelector('h3', { timeout: 30000 });
@@ -65,14 +64,14 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
                 if (context.length > 100) {
                     console.log("🤖 Synthesizing with Gemini 2.5 Flash...");
-                    await new Promise(r => setTimeout(r, 15000)); 
+                    await new Promise(r => setTimeout(r, 15000));
 
                     const model = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash" });
                     const prompt = `Rewrite into professional guide: ${article.title}. Original: ${article.content}. Research: ${context}. Use Markdown & Cite: ${links.join(', ')}.`;
                     
                     const result = await model.generateContent(prompt);
                     
-                    await axios.post('http://127.0.0.1:8000/api/articles', {
+                    await axios.post(`${process.env.BACKEND_API_URL}/articles`, {
                         title: `[Updated] ${article.title}`,
                         content: result.response.text(),
                         url: `${article.url}?updated=true`
@@ -80,14 +79,13 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
                     console.log("✨ Success! Saved to DB.");
                 }
             } catch (err) {
-                console.error(`❌ Error processing "${article.title}":`, err.message);
-                console.log("🔄 Continuing to next article...");
+                console.error(`⚠️ Error processing "${article.title}": ${err.message}`);
             }
             await new Promise(r => setTimeout(r, 5000));
         }
     } catch (err) { console.error("❌ Fatal System Error:", err.message); }
     finally { 
         await browser.close(); 
-        console.log("\n🏁 Done. Check your DB for 10 rows."); 
+        console.log("\n🏁 Done. Check your DB for 10 rows.");
     }
 })();

@@ -51,7 +51,7 @@ puppeteer.use(StealthPlugin());
                 return container ? container.innerText.trim() : "Content not found.";
             });
 
-            await axios.post('http://127.0.0.1:8000/api/articles', {
+            await axios.post(`${process.env.BACKEND_API_URL}/articles`, {
                 title: article.title,
                 content: bodyContent,
                 url: article.url
