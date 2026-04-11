@@ -19,7 +19,9 @@ function App() {
         const originalArticles = all.filter(a => !a.title.includes('[Updated]'));
         const paired = originalArticles.map(org => ({
           original: org,
-          enhanced: all.find(a => a.title === `[Updated] ${org.title}`)
+          enhanced: all.find(a => 
+            a.title.toLowerCase().trim() === `[updated] ${org.title.toLowerCase().trim()}`
+          )
         }));
         setPairs(paired);
         setLoading(false);
